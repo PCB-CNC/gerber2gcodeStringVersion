@@ -222,7 +222,7 @@ int join_polygon_set(Paths &result, gerber_state_t *gs);
 //----- export functions
 
 int export_paths_to_gcode( FILE *ofp, Paths &paths);
-std::string export_paths_to_gcode_unit( FILE *ofp, Paths &paths, int src_unit_0mm_1in, int dst_unit_0mm_1in, double ds=0.0);
+std::string export_paths_to_gcode_unit( FILE *ofp, Paths &paths, int src_unit_0mm_1in, int dst_unit_0mm_1in, char* result_header, double ds=0.0);
 int export_paths_to_polygon_unit( FILE *ofp, Paths &paths, int src_unit_0mm_1in, int dst_unit_0mm_1in, double ds=0.0);
 
 //int _expose_bit(int local_exposure, int global_exposure = 1);
@@ -240,6 +240,6 @@ int interpolate_height_idw(std::vector< double > &xyz, std::vector< double > &he
 int interpolate_height_delaunay(std::vector< double > &xyz, std::vector< double > &heightmap);
 
 // ---- main converted in lib
-std::string convert_gcode(char* file_path, char *parameters);
+std::string convert_gcode(char* file, char *parameters, long n_lines);
 
 #endif

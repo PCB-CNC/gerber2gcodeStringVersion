@@ -964,12 +964,13 @@ void print_ast(gerber_state_t *gs, int level) {
 
 }
 
-std::string convert_gcode(char* file_path, char *parameters) {
+std::string convert_gcode(char* file, char *parameters, long n_lines) {
   int i, j, k, ret;
   double x, y, prv_x, prv_y;
   gerber_state_t gs;
 
   struct timeval tv;
+
 
   Paths offset_polygons;
 
@@ -984,7 +985,7 @@ std::string convert_gcode(char* file_path, char *parameters) {
 
   // process_command_line_options(argc, argv);
   // set name of input file
-  gInputFilename = file_path;
+  // gInputFilename = file_path;
   // set radius 0.0025
   gRadius = 0.0025;
   // test outputfile
@@ -1023,16 +1024,32 @@ std::string convert_gcode(char* file_path, char *parameters) {
   //
   gerber_state_init(&gs);
 
-  k = gerber_state_load_file(&gs, gInputFilename);
-  if (k < 0) {
-    perror(gInputFilename);
-    exit(errno);
+  //change
+  // get the number of lines
+  printf("n_line=%ld\n", n_lines);
+  // set number of lines
+  gs.line_no = n_lines;
+
+    // get the line of the file
+  char* line = strtok(file, "\n");
+  while (line != NULL) {
+    // printf("%s\n", line);
+    gerber_state_interpret_line(&gs, line);
+    line = strtok(NULL, "\n");
   }
 
-  if (gDebug) {
-    dump_information(&gs, 0);
-    exit(1);
-  }
+  gerber_state_post_process(&gs);
+
+  // k = gerber_state_load_file(&gs, gInputFilename);
+  // if (k < 0) {
+  //   perror(gInputFilename);
+  //   exit(errno);
+  // }
+
+  // if (gDebug) {
+  //   dump_information(&gs, 0);
+  //   exit(1);
+  // }
 
 
   // Construct library of atomic shapes and create polygons
@@ -1067,11 +1084,13 @@ std::string convert_gcode(char* file_path, char *parameters) {
   // G20 - inch
   // G21 - mm
   //
+  char* result_header;
+  result_header = (char*)malloc(1000000);
   if (!gPrintPolygon) {
     if (gHumanReadable) {
-      fprintf( gOutStream, "%s\ng90\n", ( gMetricUnits ? "g21" : "g20" ) );
+      sprintf( result_header, "%s\ng90\n", ( gMetricUnits ? "g21" : "g20" ) );
     } else {
-      fprintf( gOutStream, "%s\nG90\n", ( gMetricUnits ? "G21" : "G20" ) );
+      sprintf( result_header, "%s\nG90\n", ( gMetricUnits ? "G21" : "G20" ) );
     }
   }
 
@@ -1085,7 +1104,7 @@ std::string convert_gcode(char* file_path, char *parameters) {
       exit(1);
     }
 
-    export_paths_to_gcode_unit(gOutStream, fin_polygons, gs.units_metric, gMetricUnits);
+    return_main << return_main.str() << std::endl << export_paths_to_gcode_unit(gOutStream, fin_polygons, gs.units_metric, gMetricUnits, result_header);
   }
 
   // Offsetting is enabled if the tool radius is specified
@@ -1110,12 +1129,12 @@ std::string convert_gcode(char* file_path, char *parameters) {
       else if ( gScanLineHorizontal ) { do_horizontal( offset_polygons, offset_polygons ); }
 
     }
-
+  
     if (gPrintPolygon) {
       export_paths_to_polygon_unit(gOutStream, offset_polygons, gs.units_metric, gMetricUnits);
     }
     else {
-      export_paths_to_gcode_unit(gOutStream, offset_polygons, gs.units_metric, gMetricUnits);
+      return_main << return_main.str() << std::endl << export_paths_to_gcode_unit(gOutStream, offset_polygons, gs.units_metric, gMetricUnits, result_header);
     }
   }
   else {
@@ -1123,18 +1142,18 @@ std::string convert_gcode(char* file_path, char *parameters) {
       ret = export_paths_to_polygon_unit(gOutStream, pgn_union, gs.units_metric, gMetricUnits);
     }
     else {
-      return_main << export_paths_to_gcode_unit(gOutStream, pgn_union, gs.units_metric, gMetricUnits);
+      return_main << return_main.str() << std::endl << export_paths_to_gcode_unit(gOutStream, pgn_union, gs.units_metric, gMetricUnits, result_header);
     }
     if (ret < 0) { fprintf(stderr, "got %i\n", ret); }
   }
 
-  // cleanup();
+  cleanup();
   gerber_state_clear( &gs );
   // char return_main[] = "finished";
   // strcpy(return_main, "finished");
   //clear terminal
-  std::cout << "\033[2J\033[1;1H";
+  // std::cout << "\033[2J\033[1;1H";
   std::cout <<"main\n" << return_main.str() << std::endl;
   return return_main.str(); 
-  exit(0);
+  // exit(0);
 }

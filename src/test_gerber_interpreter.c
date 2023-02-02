@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-
 #include "gerber_interpreter.h"
 
 #define N_LINEBUF 4099
@@ -589,6 +588,27 @@ void _print_summary(gerber_state_t *gs, int level) {
 
 }
 
+
+char* read_file_to_string(const char* file_path) {
+    FILE* file = fopen(file_path, "rb");
+    if (!file) {
+        return NULL;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char* buffer = (char*)malloc((file_size + 1) * sizeof(char));
+    fread(buffer, file_size, 1, file);
+    buffer[file_size] = '\0';
+
+    fclose(file);
+
+    printf("buffer=%s", buffer);
+    return buffer;
+} 
+
 //---
 
 int main(int argc, char **argv) {
@@ -606,22 +626,40 @@ int main(int argc, char **argv) {
   gerber_state_init(&gs);
 
   if (argc!=2) { printf("provide filename\n"); exit(0); }
+  char* buffer = read_file_to_string(argv[1]);
+  // get the number of lines
+  n_line = 0;
+  for (chp=buffer; *chp; chp++) {
+    if (*chp=='\n') { n_line++; }
+  }
+  printf("n_line=%i\n", n_line);
+  // set number of lines
+  gs.line_no = n_line;
 
-  k = gerber_state_load_file(&gs, argv[1]);
-  if (k<0) {
-    perror(argv[1]);
+  for (int i = 0; i < n_line; i++) {
+    gerber_state_interpret_line(&gs, buffer);
   }
 
-  if (print_summary) {
-    _print_summary(&gs, 0);
-  }
-  else {
-    print_gerber_state(&gs);
-  }
+  gerber_state_post_process(&gs);
 
-  //gerber_report_state(&gs);
 
-  gerber_state_clear(&gs);
+  // k = gerber_state_load_file(&gs, argv[1]);
+  // printf("k=%i\n", k);
+  
+  // if (k<0) {
+  //   perror(argv[1]);
+  // }
+
+  // if (print_summary) {
+  //   _print_summary(&gs, 0);
+  // }
+  // else {
+  //   print_gerber_state(&gs);
+  // }
+
+  // //gerber_report_state(&gs);
+
+  // gerber_state_clear(&gs);
 }
 
 #endif

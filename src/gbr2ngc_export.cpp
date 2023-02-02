@@ -21,6 +21,7 @@
 #include "gbr2ngc.hpp"
 #include <string>
 #include <sstream>
+#include <iostream>
 // How many digits after the decimal point?
 // Yes, it should be a string :)
 #define GCODE_LENGTH_PRECISION "6"
@@ -70,8 +71,7 @@ void rapid(FILE* file, const char* axes, double one, double two=0, double three=
   fprintf(file, "\n");
 }
 
-// G1 equiv. of rapid()
-//
+// // G1 equiv. of rapid()
 // void cut(FILE* file, const char* axes, double one, double two=0, double three=0) {
 //   int i;
 //   double coords[] = {one, two, three};
@@ -132,7 +132,7 @@ std::string cut(const char* axes, double one, double two=0, double three=0) {
   }
 
   result << "\n";
-  // printf("Oba\n%s", result.str().c_str());
+  printf("Oba\n%s\n\nFimOba", result.str().c_str());
   return result.str();
 }
 
@@ -162,9 +162,9 @@ int export_paths_to_polygon_unit( FILE *ofp, Paths &paths, int src_units_0in_1mm
   n = paths.size();
   for (i=0; i<n; i++) {
 
-    fprintf(ofp, "\n");
+    // fprintf(ofp, "\n");
 
-    if (gShowComments)  { fprintf(ofp, "( path %i )\n", i); }
+    // if (gShowComments)  { fprintf(ofp, "( path %i )\n", i); }
 
     m = paths[i].size();
 
@@ -176,16 +176,16 @@ int export_paths_to_polygon_unit( FILE *ofp, Paths &paths, int src_units_0in_1mm
       x = f(ctod( paths[i][j].X ));
       y = f(ctod( paths[i][j].Y ));
 
-      fprintf(ofp, "%0.8f %0.8f\n", x, y);
+      // fprintf(ofp, "%0.8f %0.8f\n", x, y);
     }
 
-    fprintf(ofp,  "%0.8f %0.8f\n", start_x, start_y);
+    // fprintf(ofp,  "%0.8f %0.8f\n", start_x, start_y);
   }
 
   return 0;
 }
 
-std::string export_paths_to_gcode_unit( FILE *ofp, Paths &paths, int src_units_0in_1mm, int dst_units_0in_1mm, double ds) {
+std::string export_paths_to_gcode_unit( FILE *ofp, Paths &paths, int src_units_0in_1mm, int dst_units_0in_1mm, char* result_header, double ds) {
   int i, j, n, m, n_t;
   int first;
   int ret;
@@ -217,17 +217,18 @@ std::string export_paths_to_gcode_unit( FILE *ofp, Paths &paths, int src_units_0
   }
 
   if (gGCodeHeader)   { fprintf(ofp, "%s\n", gGCodeHeader); }
-
-  result << cut("z", gZSafe);
+  // append the header to the result
+  result << result.str() << std::endl << gGCodeHeader << "\n";
+  result << result.str() << std::endl << cut("z", gZSafe) << "\n";
 
   if (gHumanReadable) { fprintf(ofp, "\n"); }
-  if (gShowComments)  { fprintf(ofp, "\n( feed %i seek %i zsafe %f, zcut %f )\n", gFeedRate, gSeekRate, gZSafe, gZCut ); }
+  // if (gShowComments)  { fprintf(ofp, "\n( feed %i seek %i zsafe %f, zcut %f )\n", gFeedRate, gSeekRate, gZSafe, gZCut ); }
 
   n = paths.size();
   for (i=0; i<n; i++) {
 
-    if (gHumanReadable) { fprintf(ofp, "\n\n"); }
-    if (gShowComments)  { fprintf(ofp, "( path %i )\n", i); }
+    if (gHumanReadable) { fprintf(ofp, "\n"); }
+    // if (gShowComments)  { fprintf(ofp, "( path %i )\n", i); }
 
     first = 1;
     m = paths[i].size();
@@ -248,12 +249,12 @@ std::string export_paths_to_gcode_unit( FILE *ofp, Paths &paths, int src_units_0
         rapid(ofp, "xy", x, y);
 
         if (!gHeightOffset) {
-          result << cut("z", gZCut);
+          result << result.str() << std::endl << cut("z", gZCut) << "\n";
         }
         else {
           ret = gHeightMap.zOffset(_zcut, x,y);
           // if (ret!=0) { return ; }
-          result << cut("xyz", x,y,_zcut);
+          result << cut("xyz", x,y,_zcut) << "\n";
         }
 
         first = 0;
@@ -261,7 +262,7 @@ std::string export_paths_to_gcode_unit( FILE *ofp, Paths &paths, int src_units_0
       else {
 
         if (!gHeightOffset) {
-          result << cut("xy", x, y);
+          result << result.str() << std::endl << cut("xy", x, y);
         }
         else {
 
@@ -275,12 +276,12 @@ std::string export_paths_to_gcode_unit( FILE *ofp, Paths &paths, int src_units_0
             ret = gHeightMap.zOffset(_zcut, _x, _y);
             // if (ret!=0) { return ; }
 
-            result << cut("xyz", _x, _y, _zcut);
+            result << result.str() << std::endl << cut("xyz", _x, _y, _zcut);
           }
           ret = gHeightMap.zOffset(_zcut, x,y);
           // if (ret!=0) { return ; }
 
-          result << cut("xyz", x, y, _zcut);
+          result << result.str() << std::endl << cut("xyz", x, y, _zcut) << "\n";
 
         }
 
@@ -296,7 +297,7 @@ std::string export_paths_to_gcode_unit( FILE *ofp, Paths &paths, int src_units_0
     //
 
     if (!gHeightOffset) {
-      result << cut("xy", start_x, start_y);
+      result << result.str() << std::endl << cut("xy", start_x, start_y) << "\n";
     }
     else {
       ret = gHeightMap.zOffset(_zcut, start_x,start_y);
@@ -314,19 +315,20 @@ std::string export_paths_to_gcode_unit( FILE *ofp, Paths &paths, int src_units_0
         ret = gHeightMap.zOffset(_zcut, _x, _y);
         // if (ret!=0) { return ; }
 
-        result << cut("xyz", _x, _y, _zcut);
+        result << result.str() << std::endl << cut("xyz", _x, _y, _zcut);
       }
 
       ret = gHeightMap.zOffset(_zcut, start_x, start_y);
       // if (ret!=0) { return ; }
 
-      result << cut("xyz", start_x, start_y, _zcut);
+      result << result.str() << std::endl << cut("xyz", start_x, start_y, _zcut) << "\n";
     }
 
-    result << cut("z", gZSafe);
+    result << result.str() << std::endl << cut("z", gZSafe) << "\n";
   }
 
-  fprintf(ofp, "%s", result.str().c_str());
+  // sprintf(result_header, "%s", result.str().c_str());
+  // std::cout << "main\n" << result.str() << "\n";
   return result.str();
   // if (gHumanReadable) { fprintf("\n\n"); }
   // if (gGCodeFooter)   { fprintf("%s\n", gGCodeFooter); }
