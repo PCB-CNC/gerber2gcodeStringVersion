@@ -7,7 +7,7 @@
 
 int main() {
     std::stringstream brincas;
-    brincas << convert_gcode("/home/braz-ubuntu/Github/gbr2ngc/tests/Gerber_TopLayer.GTL", "-v");
+    brincas << convert_gcode("../tests/Gerber_TopLayer.GTL", "-v");
     std::cout << "output main" << "\n" << brincas.str();
     // cout
     return 0;
